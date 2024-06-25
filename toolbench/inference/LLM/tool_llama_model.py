@@ -28,7 +28,8 @@ class ToolLLaMA:
         self.model_name = model_name_or_path
         self.template = template
         self.max_sequence_length = max_sequence_length
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, use_fast=False, model_max_length=self.max_sequence_length)
+        #self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, use_fast=False, model_max_length=self.max_sequence_length)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, model_max_length=self.max_sequence_length)
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name_or_path, low_cpu_mem_usage=True
         )
@@ -39,6 +40,8 @@ class ToolLLaMA:
         if (device == "cuda" and not cpu_offloading) or device == "mps":
             self.model.to(device)
         self.chatio = SimpleChatIO()
+        self.process_system_message = process_system_message
+        self.parser = react_parser
 
     def prediction(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         with torch.no_grad():
@@ -47,7 +50,8 @@ class ToolLLaMA:
                 "prompt": prompt,
                 "temperature": 0.5,
                 "max_new_tokens": 512,
-                "stop": "</s>",
+#                "stop": "</s>",
+                "stop": "<|im_end|>",
                 "stop_token_ids": None,
                 "echo": False
             }
@@ -98,7 +102,7 @@ class ToolLLaMA:
             role = roles[message['role']]
             content = message['content']
             if role == "System" and functions != []:
-                content = process_system_message(content, functions)
+                content = self.process_system_message(content, functions)
             prompt += f"{role}: {content}\n"
         prompt += "Assistant:\n"
         
@@ -112,7 +116,7 @@ class ToolLLaMA:
             print(f"[process({process_id})]total tokens: {decoded_token_len}")
 
         # react format prediction
-        thought, action, action_input = react_parser(predictions)
+        thought, action, action_input = self.parser(predictions)
         message = {
             "role": "assistant",
             "content": thought,
@@ -126,7 +130,7 @@ class ToolLLaMA:
 
 if __name__ == "__main__":
     # can accept all huggingface LlamaModel family
-    llm = ToolLLaMA("decapoda-research/llama-7b-hf")
+    llm = ToolLLaMA("/home/wchen/repos/orca3/orca3_ckpt_2000")
     messages = [
         {'role': 'system', 'content': '''You are AutoGPT, you can use many tools(functions) to do
 the following task.\nFirst I will give you the task description, and your task start.\nAt each step, you need to give your thought to analyze the status now and what to do next, with a function call to actually excute your step.\nAfter the call, you will get the call result, and you are now in a new state.\nThen you will analyze your status now, then decide what to do next...\nAfter many (Thought-call) pairs, you finally perform the task, then you can give your finial answer.\nRemember: \n1.the state change is , you can\'t go
@@ -139,5 +143,5 @@ at the input format'''},
 to interact with the game, and the total process of a input use 3 steps of call, each step you can only combine 2 of the left numbers, so the count of left numbers decrease from 4 to 1''','parameters':{'type': 'object', 'properties':{}}}]#, 'parameters': {'type': 'object', 'properties': {'input': {'type': 'string', 'description': 'describe what number you want to conbine, and how to conbine.'}}, 'required': ['input']}}]
 
     llm.change_messages(messages)
-    output = llm.parse(functions=functions)
+    output = llm.parse(functions=functions, process_id=0)
     print(output)

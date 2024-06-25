@@ -1,0 +1,8 @@
+[
+    {
+        "username": "your_user_name",
+        "passwd": "your_password",
+        "api_key": "...",
+        "organization": "Personal"
+    },
+]

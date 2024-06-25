@@ -1,3 +1,9 @@
+import debugpy
+debugpy.listen(("localhost", 5678))
+print('listening to port 5678, attach the debugger to continue')
+print(__file__)
+debugpy.wait_for_client()
+
 '''
 Close-domain QA Pipeline
 '''

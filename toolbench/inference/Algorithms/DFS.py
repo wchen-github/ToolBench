@@ -1,6 +1,6 @@
 import re
 from Tree.Tree import my_tree, tree_node
-from Prompts.ReAct_prompts import FORMAT_INSTRUCTIONS_SYSTEM_FUNCTION, FORMAT_INSTRUCTIONS_USER_FUNCTION
+from Prompts.ReAct_prompts import FORMAT_INSTRUCTIONS_SYSTEM_FUNCTION, FORMAT_INSTRUCTIONS_USER_FUNCTION, ORCA3_FORMAT_INSTRUCTIONS_SYSTEM_FUNCTION
 from Prompts.Tree_search_prompts import DIVERSITY_PROMPT
 from Algorithms.base_search import base_search_method
 from copy import deepcopy
@@ -108,6 +108,7 @@ class DFS_tree_search(base_search_method):
         system = FORMAT_INSTRUCTIONS_SYSTEM_FUNCTION
         system = system.replace("{task_description}",
                                 self.io_func.task_description)
+        system = ORCA3_FORMAT_INSTRUCTIONS_SYSTEM_FUNCTION
         self.tree.root.messages.append({"role": "system", "content": system})
 
         user = FORMAT_INSTRUCTIONS_USER_FUNCTION

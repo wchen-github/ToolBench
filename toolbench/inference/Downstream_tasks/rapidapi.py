@@ -10,6 +10,7 @@ from toolbench.inference.LLM.chatgpt_function_model import ChatGPTFunction
 from toolbench.inference.LLM.davinci_model import Davinci
 from toolbench.inference.LLM.tool_llama_lora_model import ToolLLaMALoRA
 from toolbench.inference.LLM.tool_llama_model import ToolLLaMA
+from toolbench.inference.LLM.orca3_model import Orca3
 from toolbench.inference.LLM.retriever import ToolRetriever
 from toolbench.inference.Algorithms.single_chain import single_chain
 from toolbench.inference.Algorithms.DFS import DFS_tree_search
@@ -407,6 +408,12 @@ class pipeline_runner:
                 backbone_model = ToolLLaMALoRA(base_name_or_path=args.model_path, model_name_or_path=args.lora_path, max_sequence_length=args.max_sequence_length)
             else:
                 backbone_model = ToolLLaMA(model_name_or_path=args.model_path, max_sequence_length=args.max_sequence_length)
+        elif args.backbone_model == "orca3":
+            # ratio = 4 means the sequence length is expanded by 4, remember to change the model_max_length to 8192 (2048 * ratio) for ratio = 4
+            ratio = int(args.max_sequence_length/args.max_source_sequence_length)
+            replace_llama_with_condense(ratio=ratio)
+            assert args.lora == False, "Orca3 model does not support lora model."
+            backbone_model = Orca3(model_name_or_path=args.model_path, max_sequence_length=args.max_sequence_length)
         else:
             backbone_model = args.backbone_model
         return backbone_model
